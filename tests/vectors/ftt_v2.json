@@ -1,0 +1,17 @@
+{
+  "id": "K7QM3F",
+  "secret": "9XTR2PWD",
+  "code": "K7QM3F-9XTR-2PWD",
+  "iterations": 600000,
+  "master_hex": "24b704610df4c9de36ac549f91b51b93ebc7aa5066410991e47731c99fd8737d",
+  "fragment": "JLcEYQ30yd42rFSfkbUbk-vHqlBmQQmR5HcxyZ_Yc30",
+  "auth_token": "U6JuTovYXa08XhMBCwZjdFlqlevqa7bSwSXhWOal1wQ",
+  "auth_hash": "417699a783ed67378784eaf3709518631169faa15445847fadcf7640b4610694",
+  "iv_hex": "0102030405060708090a0b0c",
+  "plaintext_hex": "667474206b6e6f776e2d616e7377657220766563746f7220e29c93",
+  "chunk_index": 1,
+  "chunk_total": 2,
+  "chunk_hex": "0102030405060708090a0b0c610a5a55acb5a44abcb28794c71ed98f6088f877eac7470609a1c17e6cc29e72e9106c30ef18b5b2553e14",
+  "manifest_json": "{\"v\":2,\"kind\":\"text\",\"name\":\"\",\"mime\":\"text/plain;charset=utf-8\",\"size\":27,\"chunkSize\":5242880,\"chunks\":2}",
+  "manifest_hex": "0102030405060708090a0b0c7c5c5857fde9e71fb9f6889e96539e892586e936b28a5b47865870191bb6ddbb9ca91be670ef23c39ecac8db6a44d2a00cf260629fdfe29d9ec6b2ea45129db6e70965ca1b950778338fb1fb5bdb571d343a854ae5e85b835cffeb3d3fafff4033bb71e087480a974d16ff9b87c535f01a90653a404f74030e41"
+}

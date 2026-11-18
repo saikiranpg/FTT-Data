@@ -1,0 +1,15 @@
+{
+  "name": "ftt-data",
+  "private": true,
+  "type": "module",
+  "description": "Frontend tooling only: the app ships no npm code to browsers except the vendored QR generator.",
+  "scripts": {
+    "test": "node --test \"tests/js/*.test.mjs\"",
+    "build:css": "tailwindcss -i tailwind/input.css -o static/tailwind.css --minify",
+    "vectors": "node tests/js/gen_vectors.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.5",
+    "tailwindcss": "4.3.5"
+  }
+}

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>FTT Data</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M11 15v-3a5 5 0 0 1 10 0v3' stroke='white' stroke-width='2.5' fill='none'/%3E%3Crect x='8' y='15' width='16' height='11' rx='2' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/tailwind.css">
+  <script type="module" src="/static/app.js"></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+  <main class="mx-auto max-w-xl px-4 py-8 sm:py-14">
+    <header class="mb-6">
+      <h1 class="text-2xl font-semibold tracking-tight">FTT Data</h1>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        Move text or a file to another device. It's encrypted in your browser, the server only ever stores ciphertext, and it's deleted when it expires.
+      </p>
+    </header>
+
+    <div id="no-crypto" hidden role="alert" class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+      <p class="font-semibold">Encryption isn't available on this page.</p>
+      <p class="mt-1">Browsers only provide the Web Crypto API on secure origins. Open this site over <strong>HTTPS</strong> (or on <code>localhost</code>). Sending and receiving are disabled until then.</p>
+    </div>
+
+    <nav class="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-slate-200/70 p-1 text-sm font-medium dark:bg-slate-800" role="tablist">
+      <button id="tab-send" type="button" role="tab" aria-selected="true" class="rounded-md px-3 py-2 text-slate-600 aria-selected:bg-white aria-selected:text-slate-900 aria-selected:shadow-sm dark:text-slate-400 dark:aria-selected:bg-slate-950 dark:aria-selected:text-white">Send</button>
+      <button id="tab-receive" type="button" role="tab" aria-selected="false" class="rounded-md px-3 py-2 text-slate-600 aria-selected:bg-white aria-selected:text-slate-900 aria-selected:shadow-sm dark:text-slate-400 dark:aria-selected:bg-slate-950 dark:aria-selected:text-white">Receive</button>
+    </nav>
+
+    <!-- ============================== SEND ============================== -->
+    <section id="panel-send" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div id="send-form">
+        <div class="mb-3 flex gap-5 text-sm" role="tablist">
+          <button id="kind-text" type="button" role="tab" aria-selected="true" class="border-b-2 border-transparent pb-1 font-medium text-slate-500 aria-selected:border-indigo-600 aria-selected:text-slate-900 dark:aria-selected:text-white">Text</button>
+          <button id="kind-file" type="button" role="tab" aria-selected="false" class="border-b-2 border-transparent pb-1 font-medium text-slate-500 aria-selected:border-indigo-600 aria-selected:text-slate-900 dark:aria-selected:text-white">File</button>
+        </div>
+
+        <div id="text-pane">
+          <label for="text-input" class="sr-only">Text to send</label>
+          <textarea id="text-input" rows="7" placeholder="Paste or type text…" spellcheck="false" class="block w-full resize-y rounded-lg border border-slate-300 bg-white p-3 font-mono text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none dark:border-slate-700 dark:bg-slate-950"></textarea>
+          <p id="text-count" class="mt-1 text-right text-xs text-slate-500"></p>
+        </div>
+
+        <div id="file-pane" hidden>
+          <label id="file-drop" for="file-input" data-drag="false" class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-600 hover:border-indigo-400 data-[drag=true]:border-indigo-500 data-[drag=true]:bg-indigo-50 dark:border-slate-700 dark:text-slate-400 dark:data-[drag=true]:bg-indigo-950">
+            <span class="font-medium text-slate-900 dark:text-slate-100">Choose a file</span>
+            <span>or drag it here</span>
+            <span id="file-limit" class="text-xs"></span>
+          </label>
+          <input id="file-input" type="file" class="sr-only">
+          <p id="file-info" hidden class="mt-2 truncate text-sm"></p>
+        </div>
+
+        <div class="mt-4 grid gap-3 sm:grid-cols-2">
+          <label class="block text-sm">
+            <span class="mb-1 block font-medium">Expires after</span>
+            <select id="ttl-select" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none dark:border-slate-700 dark:bg-slate-950"></select>
+          </label>
+          <label id="ttl-custom-wrap" hidden class="block text-sm">
+            <span class="mb-1 block font-medium">Custom (minutes)</span>
+            <input id="ttl-custom" type="number" min="1" max="60" step="1" value="15" inputmode="numeric" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none dark:border-slate-700 dark:bg-slate-950">
+          </label>
+        </div>
+
+        <div class="mt-4 space-y-3 text-sm">
+          <label class="flex items-start gap-2">
+            <input id="burn" type="checkbox" class="mt-0.5 size-4 accent-indigo-600">
+            <span><span class="font-medium">Burn after reading</span><span class="block text-slate-500">Deleted from the server as soon as it's opened once.</span></span>
+          </label>
+          <label class="flex items-start gap-2">
+            <input id="link-only" type="checkbox" class="mt-0.5 size-4 accent-indigo-600">
+            <span><span class="font-medium">QR code / link only</span><span class="block text-slate-500">No typeable code. Uses a full 256-bit key instead of a 40-bit code.</span></span>
+          </label>
+        </div>
+
+        <div id="send-alert" hidden role="alert"></div>
+
+        <button id="send-btn" type="button" class="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">Encrypt &amp; send</button>
+      </div>
+
+      <div id="send-progress" hidden class="mt-4">
+        <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+          <div id="send-bar" class="h-full w-0 rounded-full bg-indigo-600 transition-[width] duration-150"></div>
+        </div>
+        <p id="send-status" class="mt-1 text-xs text-slate-500" aria-live="polite"></p>
+      </div>
+
+      <div id="send-result" hidden>
+        <div class="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+          <img id="qr-img" alt="QR code for the share link" class="size-48 shrink-0 rounded-lg bg-white p-1 [image-rendering:pixelated]">
+          <div class="w-full min-w-0 space-y-4">
+            <div id="code-block">
+              <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">Code</p>
+              <div class="mt-1 flex items-center gap-3">
+                <code id="share-code" class="font-mono text-xl font-semibold tracking-wide whitespace-nowrap sm:text-2xl"></code>
+                <button type="button" data-copy="share-code" class="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Copy</button>
+              </div>
+              <p class="mt-1 text-xs text-slate-500">Type it on the other device under Receive.</p>
+            </div>
+            <div>
+              <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">Link (contains the key)</p>
+              <div class="mt-1 flex gap-2">
+                <input id="share-link" readonly class="min-w-0 flex-1 rounded-md border border-slate-300 bg-slate-50 px-2 py-1 font-mono text-xs dark:border-slate-700 dark:bg-slate-950" aria-label="Share link">
+                <button type="button" data-copy="share-link" class="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Copy</button>
+              </div>
+            </div>
+            <p id="send-expiry" class="text-sm text-slate-600 dark:text-slate-400"></p>
+            <p id="send-burn-note" hidden class="text-sm text-amber-700 dark:text-amber-400">Burn after reading: the first person to open it destroys it.</p>
+          </div>
+        </div>
+        <button id="send-again" type="button" class="mt-6 w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Send something else</button>
+      </div>
+    </section>
+
+    <!-- ============================== RECEIVE ============================== -->
+    <section id="panel-receive" hidden class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <form id="code-form" class="flex gap-2" autocomplete="off">
+        <label for="code-input" class="sr-only">Drop code</label>
+        <input id="code-input" placeholder="K7QM3F-9XTR-2PWD" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="24" class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono tracking-wider uppercase focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none dark:border-slate-700 dark:bg-slate-950">
+        <button id="open-btn" type="submit" class="rounded-lg bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">Open</button>
+      </form>
+      <p class="mt-2 text-xs text-slate-500">Or scan the sender's QR code with your phone's camera.</p>
+
+      <div id="recv-alert" hidden role="alert"></div>
+
+      <div id="burn-confirm" hidden class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <p class="font-semibold">One-time drop</p>
+        <p class="mt-1">It will be deleted from the server as soon as you open it. Be ready to read or save it.</p>
+        <button id="reveal-btn" type="button" class="mt-3 rounded-lg bg-amber-600 px-4 py-2 font-medium text-white hover:bg-amber-500 disabled:opacity-50">Reveal now</button>
+      </div>
+
+      <div id="recv-progress" hidden class="mt-4">
+        <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+          <div id="recv-bar" class="h-full w-0 rounded-full bg-indigo-600 transition-[width] duration-150"></div>
+        </div>
+        <p id="recv-status" class="mt-1 text-xs text-slate-500" aria-live="polite"></p>
+      </div>
+
+      <div id="recv-text" hidden class="mt-4">
+        <div id="text-warning" hidden class="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <p class="font-semibold">This text matched a safety rule</p>
+          <ul id="text-warning-list" class="mt-1 list-disc pl-5"></ul>
+          <button id="show-anyway" type="button" class="mt-3 rounded-lg border border-amber-600 px-3 py-1.5 font-medium hover:bg-amber-100 dark:hover:bg-amber-900">Show anyway</button>
+        </div>
+        <div id="text-box" hidden>
+          <pre id="text-output" class="max-h-96 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-sm break-words whitespace-pre-wrap dark:border-slate-800 dark:bg-slate-950"></pre>
+          <button type="button" data-copy="text-output" class="mt-2 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Copy text</button>
+        </div>
+      </div>
+
+      <div id="recv-file" hidden class="mt-4 space-y-3">
+        <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+          <p id="file-name" class="truncate font-medium"></p>
+          <p id="file-meta" class="text-sm text-slate-500"></p>
+        </div>
+        <div class="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-200">
+          <p class="font-semibold">Before you open it</p>
+          <p class="mt-1">This file was encrypted on the sender's device, so nobody could scan it for malware. Only open it if you trust the sender and were expecting it.</p>
+          <ul id="file-warning-list" hidden class="mt-2 list-disc pl-5 font-medium text-red-700 dark:text-red-300"></ul>
+        </div>
+        <a id="download-link" class="block w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-center font-medium text-white hover:bg-indigo-500">Download</a>
+      </div>
+
+      <p id="recv-expiry" hidden class="mt-4 text-sm text-slate-600 dark:text-slate-400"></p>
+    </section>
+
+    <footer class="mt-8 space-y-1 text-xs leading-relaxed text-slate-500">
+      <p>AES-256-GCM in your browser. The key lives in the code, or in the part of the link after <code>#</code>; neither is ever sent to the server.</p>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,4 @@
+/* Build: npm run build:css  (Docker does this automatically in its first stage) */
+@import "tailwindcss" source(none);
+@source "../templates";
+@source "../static/app.js";

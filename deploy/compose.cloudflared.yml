@@ -1,0 +1,21 @@
+# HTTPS through a Cloudflare Tunnel: no open ports, no public IP needed (home server, NAS, Pi).
+#
+#   1. Cloudflare dashboard → Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared).
+#      Copy its token into .env as CLOUDFLARE_TUNNEL_TOKEN.
+#   2. In the tunnel, add a Public Hostname (e.g. ftt.example.com) with service  http://app:8000
+#   3. docker compose -f docker-compose.yml -f deploy/compose.cloudflared.yml up -d --build
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on: [app]
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    networks:
+      drop:
+        ipv4_address: 172.30.0.11
+
+  app:
+    environment:
+      TRUSTED_PROXIES: 172.30.0.11 # cloudflared's fixed address on the compose network

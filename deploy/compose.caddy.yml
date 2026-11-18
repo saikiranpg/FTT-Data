@@ -1,0 +1,31 @@
+# HTTPS with automatic Let's Encrypt certificates, for a server with a public IP and a domain.
+#
+#   1. Point a DNS A/AAAA record for FTT_DOMAIN at this server; open ports 80 and 443.
+#   2. Set FTT_DOMAIN in .env.
+#   3. docker compose -f docker-compose.yml -f deploy/compose.caddy.yml up -d --build
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      FTT_DOMAIN: ${FTT_DOMAIN:?Set FTT_DOMAIN in .env, e.g. FTT_DOMAIN=ftt.example.com}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificates: keep this volume
+      - caddy_config:/config
+    networks:
+      drop:
+        ipv4_address: 172.30.0.10
+
+  app:
+    environment:
+      TRUSTED_PROXIES: 172.30.0.10 # Caddy's fixed address on the compose network
+
+volumes:
+  caddy_data:
+  caddy_config:

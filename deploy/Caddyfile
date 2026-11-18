@@ -1,0 +1,7 @@
+{$FTT_DOMAIN} {
+	# Caddy replaces any client-supplied X-Forwarded-For with the real client IP,
+	# which the app trusts because this container is in TRUSTED_PROXIES.
+	reverse_proxy app:8000
+
+	header Strict-Transport-Security "max-age=31536000"
+}

@@ -1,0 +1,71 @@
+# FTT Data — end-to-end encrypted file & text transfer.
+#
+#   cp .env.example .env      # adjust if needed; every setting is optional
+#   docker compose up -d --build
+#
+# TLS is terminated in front of this stack (see README → Deployment): browsers only expose
+# Web Crypto on HTTPS or localhost. Optional HTTPS front ends live in deploy/.
+name: ftt-data
+
+services:
+  app:
+    build: .
+    image: ftt-data:latest
+    restart: unless-stopped
+    ports:
+      # Loopback only: just a proxy or tunnel on this host can reach the app.
+      - "127.0.0.1:${FTT_PORT:-8000}:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATA_DIR: /tmp/drops
+      DISK_CAP_BYTES: ${DISK_CAP_BYTES:-5368709120}
+      # Whose X-Forwarded-For to believe for per-IP rate limiting. 172.30.0.1 is this network's
+      # gateway: where a proxy or tunnel running on the host appears to connect from.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.30.0.1}
+      # Optional tuning; empty means the built-in default (see README → Configuration).
+      MAX_TEXT_BYTES: ${MAX_TEXT_BYTES:-}
+      MAX_FILE_BYTES: ${MAX_FILE_BYTES:-}
+      CHUNK_SIZE_BYTES: ${CHUNK_SIZE_BYTES:-}
+      TTL_PRESETS_SECONDS: ${TTL_PRESETS_SECONDS:-}
+      TTL_DEFAULT_SECONDS: ${TTL_DEFAULT_SECONDS:-}
+      TTL_MIN_SECONDS: ${TTL_MIN_SECONDS:-}
+      TTL_MAX_SECONDS: ${TTL_MAX_SECONDS:-}
+      UPLOAD_WINDOW_SECONDS: ${UPLOAD_WINDOW_SECONDS:-}
+      MAX_FAILED_ATTEMPTS: ${MAX_FAILED_ATTEMPTS:-}
+      RATE_WINDOW_SECONDS: ${RATE_WINDOW_SECONDS:-}
+      RATE_CREATE: ${RATE_CREATE:-}
+      RATE_OPEN: ${RATE_OPEN:-}
+      RATE_CHUNK: ${RATE_CHUNK:-}
+    volumes:
+      # Encrypted chunks. A volume (not the container layer) so files and Redis metadata survive
+      # an app restart together; anything without live metadata is swept at startup.
+      - drops:/tmp/drops
+    depends_on:
+      redis:
+        condition: service_healthy
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    networks: [drop]
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    # Memory only: no RDB snapshots or AOF, so drop metadata never touches disk. noeviction makes
+    # Redis refuse new writes when full instead of silently evicting live drops.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+    networks: [drop]
+
+volumes:
+  drops:
+
+networks:
+  drop:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

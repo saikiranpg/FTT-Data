@@ -1,0 +1,30 @@
+{
+  "_about": "Content-safety rules. The server serves them at /api/config; browsers enforce them before encrypting (sender) and after decrypting (receiver). The server cannot apply them itself because it only sees ciphertext. text_rules: type is 'keyword' (case-insensitive literal) or 'regex'; action is 'block' or 'warn'.",
+  "blocked_extensions": [
+    "exe", "msi", "msp", "msix", "appx", "bat", "cmd", "com", "scr", "pif", "cpl",
+    "vbs", "vbe", "jse", "wsf", "wsh", "ps1", "psm1", "hta", "jar", "apk",
+    "lnk", "reg", "scf", "app", "dmg", "pkg"
+  ],
+  "blocked_mime_types": [
+    "application/x-msdownload",
+    "application/x-msdos-program",
+    "application/x-msi",
+    "application/x-ms-installer",
+    "application/vnd.microsoft.portable-executable",
+    "application/java-archive",
+    "application/vnd.android.package-archive",
+    "application/x-apple-diskimage"
+  ],
+  "blocked_signatures": [
+    { "name": "Windows executable (MZ/PE)", "hex": "4d5a" },
+    { "name": "Linux executable (ELF)", "hex": "7f454c46" },
+    { "name": "macOS executable (Mach-O)", "hex": "cffaedfe" },
+    { "name": "macOS executable (Mach-O)", "hex": "cefaedfe" },
+    { "name": "Mach-O universal binary or Java class", "hex": "cafebabe" }
+  ],
+  "text_rules": [
+    { "name": "EICAR antivirus test string", "type": "keyword", "pattern": "EICAR-STANDARD-ANTIVIRUS-TEST-FILE", "action": "block" },
+    { "name": "Private key", "type": "regex", "pattern": "-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----", "action": "warn" },
+    { "name": "AWS access key ID", "type": "regex", "pattern": "\\b(?:AKIA|ASIA)[0-9A-Z]{16}\\b", "action": "warn" }
+  ]
+}
